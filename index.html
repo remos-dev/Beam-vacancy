@@ -163,7 +163,7 @@
 
     <section class="chart-row">
         <div class="chart-container">
-            <h3>Vacancy Rate by Building (Unit % &bull; SF % &bull; Budget Allowance)</h3>
+            <h3>Vacancy Rate by Building &amp; Unit Type</h3>
             <canvas id="vacancy-rate-chart"></canvas>
         </div>
         <div class="chart-container">
@@ -211,14 +211,16 @@ const BUILDINGS = [
         year: 2026,
         generalVacancyRate: 0.05,
         totalLeaseRevenue: 761663,
+        // Unit counts by type: { total, vacant }
+        office:  { total: 5, vacant: 0 },   // 101, 102, 203, 210, 300/400
+        storage: { total: 0, vacant: 0 },
+        parking: { total: 10, vacant: 4 },   // P1-P10 (tandem); P1,P2,P9,P10 vacant
         vacantUnits: [
             { unit: "P1", desc: "Vacant", rsf: null, type: "parking" },
             { unit: "P2", desc: "Vacant", rsf: null, type: "parking" },
             { unit: "P9", desc: "Vacant", rsf: null, type: "parking" },
             { unit: "P10", desc: "Vacant", rsf: null, type: "parking" }
         ],
-        occupiedUnitCount: 11,
-        totalUnitCount: 15,
         brokerageFees: 0,
         capitalExpenses: 13000,
         tenantImprovement: 0,
@@ -230,6 +232,9 @@ const BUILDINGS = [
         year: 2026,
         generalVacancyRate: 0.05,
         totalLeaseRevenue: 1070004,
+        office:  { total: 22, vacant: 4 },   // 18 occupied + 4 vacant (205,206,225,226)
+        storage: { total: 11, vacant: 6 },   // 5 occupied (C,D,H,J,Pivot Locker) + 6 vacant (A,B,E,F,G,I)
+        parking: { total: 0, vacant: 0 },
         vacantUnits: [
             { unit: "205", desc: "Vacant - 571 RSF", rsf: 571, type: "office" },
             { unit: "206", desc: "Vacant - 1,339 RSF", rsf: 1339, type: "office" },
@@ -242,12 +247,10 @@ const BUILDINGS = [
             { unit: "G", desc: "Vacant (Storage)", rsf: null, type: "storage" },
             { unit: "I", desc: "Vacant (Storage)", rsf: null, type: "storage" }
         ],
-        occupiedUnitCount: 19,
-        totalUnitCount: 29,
         brokerageFees: 35689,
         capitalExpenses: 127947,
         tenantImprovement: 0,
-        notes: "4 office suites (3,878 RSF) budgeted to lease up Apr 2026; compressor $25K Jul; brokerage $35.7K May"
+        notes: "4 office suites (3,878 RSF) budgeted to lease up Apr 2026; compressor $25K Jul"
     },
     {
         name: "District Office (PMC)",
@@ -255,8 +258,11 @@ const BUILDINGS = [
         year: 2026,
         generalVacancyRate: null,
         totalLeaseRevenue: 2313063,
+        office:  { total: 8, vacant: 3 },    // 5 occupied (Retail 4, 100/200/300, 501, 520, ROOF) + 3 vacant (Retail 1-3, 400, 510)
+        storage: { total: 0, vacant: 0 },
+        parking: { total: 26, vacant: 6 },   // 20 occupied (P1-P16,P18,P22-P25) + 6 vacant (P17,P19,P20,P21,P26,P27)
         vacantUnits: [
-            { unit: "Retail 1-3", desc: "Vacant (Retail)", rsf: null, type: "retail" },
+            { unit: "Retail 1-3", desc: "Vacant (Retail)", rsf: null, type: "office" },
             { unit: "400", desc: "Vacant (Office)", rsf: null, type: "office" },
             { unit: "510", desc: "Vacant (Office)", rsf: null, type: "office" },
             { unit: "P17", desc: "Vacant (Parking)", rsf: null, type: "parking" },
@@ -266,8 +272,6 @@ const BUILDINGS = [
             { unit: "P26", desc: "Vacant (Parking)", rsf: null, type: "parking" },
             { unit: "P27", desc: "Vacant (Parking)", rsf: null, type: "parking" }
         ],
-        occupiedUnitCount: 26,
-        totalUnitCount: 35,
         brokerageFees: 0,
         capitalExpenses: 30000,
         tenantImprovement: 0,
@@ -279,6 +283,9 @@ const BUILDINGS = [
         year: 2026,
         generalVacancyRate: 0.05,
         totalLeaseRevenue: 1402879,
+        office:  { total: 56, vacant: 8 },   // 48 occupied + 8 vacant (135,223,235,305,310,350,435,490-J)
+        storage: { total: 75, vacant: 41 },  // 34 occupied + 41 vacant (S106-S628 various)
+        parking: { total: 89, vacant: 32 },  // 57 occupied + 32 vacant (P01,P14-P15,P26-P35 Taylor lot,misc)
         vacantUnits: [
             { unit: "135", desc: "Vacant (Office)", rsf: null, type: "office" },
             { unit: "223", desc: "Vacant (Office)", rsf: null, type: "office" },
@@ -312,18 +319,59 @@ const BUILDINGS = [
             { unit: "S512", desc: "Vacant (Storage)", rsf: null, type: "storage" },
             { unit: "S513", desc: "Vacant (Storage)", rsf: null, type: "storage" },
             { unit: "S601", desc: "Vacant (Storage)", rsf: null, type: "storage" },
-            { unit: "S608-S628", desc: "Vacant (Storage) - 17 units", rsf: null, type: "storage" },
+            { unit: "S608", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S609", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S612", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S613", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S614", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S615", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S617", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S618", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S619", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S620", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S622", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S623", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S624", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S625", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S626", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S627", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S628", desc: "Vacant (Storage)", rsf: null, type: "storage" },
             { unit: "P01", desc: "Vacant (Parking)", rsf: null, type: "parking" },
-            { unit: "P14-P15", desc: "Vacant (Parking) - 2 spaces", rsf: null, type: "parking" },
-            { unit: "P26-P35", desc: "Vacant - Taylor lot no longer leased (10 spaces)", rsf: null, type: "parking" },
-            { unit: "P39-P89", desc: "Vacant (Parking) - various spaces", rsf: null, type: "parking" }
+            { unit: "P14", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P15", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P26", desc: "Vacant - Taylor lot (Parking)", rsf: null, type: "parking" },
+            { unit: "P27", desc: "Vacant - Taylor lot (Parking)", rsf: null, type: "parking" },
+            { unit: "P28", desc: "Vacant - Taylor lot (Parking)", rsf: null, type: "parking" },
+            { unit: "P29", desc: "Vacant - Taylor lot (Parking)", rsf: null, type: "parking" },
+            { unit: "P30", desc: "Vacant - Taylor lot (Parking)", rsf: null, type: "parking" },
+            { unit: "P31", desc: "Vacant - Taylor lot (Parking)", rsf: null, type: "parking" },
+            { unit: "P32", desc: "Vacant - Taylor lot (Parking)", rsf: null, type: "parking" },
+            { unit: "P33", desc: "Vacant - Taylor lot (Parking)", rsf: null, type: "parking" },
+            { unit: "P34", desc: "Vacant - Taylor lot (Parking)", rsf: null, type: "parking" },
+            { unit: "P35", desc: "Vacant - Taylor lot (Parking)", rsf: null, type: "parking" },
+            { unit: "P39", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P43", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P49", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P54", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P58", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P66", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P72", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P73", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P74", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P77", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P81", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P82", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P83", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P85", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P86", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P87", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P88", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P89", desc: "Vacant (Parking)", rsf: null, type: "parking" }
         ],
-        occupiedUnitCount: 95,
-        totalUnitCount: 176,
         brokerageFees: 31405,
         capitalExpenses: 30555,
         tenantImprovement: 0,
-        notes: "Highest vacancy count; many storage & parking units; Taylor lot spaces (P26-P35) no longer leased"
+        notes: "Highest vacancy count; many storage & parking units; Taylor lot (P26-P35) no longer leased"
     },
     {
         name: "Eastside Exchange",
@@ -331,18 +379,19 @@ const BUILDINGS = [
         year: 2026,
         generalVacancyRate: 0.05,
         totalLeaseRevenue: 1325156,
+        office:  { total: 14, vacant: 2 },   // 12 occupied + 2 vacant (12, 307)
+        storage: { total: 8, vacant: 2 },    // 6 occupied (B,D,E,G + others) + 2 vacant (F,H)
+        parking: { total: 45, vacant: 0 },   // All parking occupied (Salt & Straw, tenants)
         vacantUnits: [
             { unit: "12", desc: "Vacant - former Cascade Energy - 1,881 RSF", rsf: 1881, type: "office" },
             { unit: "307", desc: "Vacant - former Cascade Energy - 2,129 RSF", rsf: 2129, type: "office" },
             { unit: "F", desc: "Vacant (Storage)", rsf: null, type: "storage" },
             { unit: "H", desc: "Vacant (Storage)", rsf: null, type: "storage" }
         ],
-        occupiedUnitCount: 16,
-        totalUnitCount: 20,
         brokerageFees: 200560,
         capitalExpenses: 0,
         tenantImprovement: 204515,
-        notes: "Suite 400 (13,500 RSF) lease-up Aug with $182.8K brokerage + $135K TI; Suite 307 budgeted Mar; Suite 12 budgeted Apr"
+        notes: "Suite 400 (13,500 RSF) lease-up Aug; $182.8K brokerage + $135K TI; Suite 307 Mar; Suite 12 Apr"
     },
     {
         name: "Water Avenue",
@@ -350,16 +399,17 @@ const BUILDINGS = [
         year: 2026,
         generalVacancyRate: 0.05,
         totalLeaseRevenue: 847697,
+        office:  { total: 25, vacant: 1 },   // 24 occupied + 1 vacant (50B)
+        storage: { total: 5, vacant: 1 },    // 4 occupied (S020,S045,S047,S060-occ) + 1 vacant (S060)
+        parking: { total: 0, vacant: 0 },
         vacantUnits: [
             { unit: "50B", desc: "Vacant - 402 RSF", rsf: 402, type: "office" },
             { unit: "S060", desc: "Vacant - 914 RSF", rsf: 914, type: "storage" }
         ],
-        occupiedUnitCount: 27,
-        totalUnitCount: 29,
         brokerageFees: 12011,
         capitalExpenses: 17612,
         tenantImprovement: 0,
-        notes: "Lowest vacancy; Door relay access controls $5K (WACC); Suite 270 brokerage $12K May"
+        notes: "Lowest vacancy; Door relay access controls $5K; Suite 270 brokerage $12K May"
     }
 ];
 
@@ -437,25 +487,43 @@ class Dashboard {
         this.renderCapexTable();
     }
 
+    // Helper: get totals by type for a building
+    typeTotals(b) {
+        return {
+            officeTotal: b.office.total, officeVacant: b.office.vacant,
+            storageTotal: b.storage.total, storageVacant: b.storage.vacant,
+            parkingTotal: b.parking.total, parkingVacant: b.parking.vacant,
+            allTotal: b.office.total + b.storage.total + b.parking.total,
+            allVacant: b.office.vacant + b.storage.vacant + b.parking.vacant,
+        };
+    }
+
     renderKPIs() {
         const buildings = this.getFilteredBuildings();
         const totalSF = buildings.reduce((s,b) => s + b.totalSF, 0);
         const vacantSF = buildings.reduce((s,b) => s + b.vacantUnits.filter(v => v.rsf).reduce((a,v) => a + v.rsf, 0), 0);
-        const totalVacantUnits = buildings.reduce((s,b) => s + b.vacantUnits.length, 0);
         const totalRevenue = buildings.reduce((s,b) => s + b.totalLeaseRevenue, 0);
         const totalCapex = buildings.reduce((s,b) => s + b.capitalExpenses + b.tenantImprovement, 0);
         const totalBrokerage = buildings.reduce((s,b) => s + b.brokerageFees, 0);
         const vacancyRate = totalSF > 0 ? vacantSF / totalSF : 0;
 
-        const totalUnits = buildings.reduce((s,b) => s + b.totalUnitCount, 0);
-        const unitVacRate = totalUnits > 0 ? totalVacantUnits / totalUnits : 0;
+        const offTotal = buildings.reduce((s,b) => s + b.office.total, 0);
+        const offVac = buildings.reduce((s,b) => s + b.office.vacant, 0);
+        const stoTotal = buildings.reduce((s,b) => s + b.storage.total, 0);
+        const stoVac = buildings.reduce((s,b) => s + b.storage.vacant, 0);
+        const prkTotal = buildings.reduce((s,b) => s + b.parking.total, 0);
+        const prkVac = buildings.reduce((s,b) => s + b.parking.vacant, 0);
+
+        const offRate = offTotal > 0 ? offVac / offTotal : 0;
+        const stoRate = stoTotal > 0 ? stoVac / stoTotal : 0;
+        const prkRate = prkTotal > 0 ? prkVac / prkTotal : 0;
 
         const kpis = [
             { label: 'Total Portfolio SF', value: fmtNum(totalSF), sub: buildings.length + ' buildings' },
-            { label: 'Vacant Units', value: totalVacantUnits, sub: totalUnits + ' total units' },
-            { label: 'Vacant Unit Rate', value: fmtPct(unitVacRate), sub: 'Vacant / total units' },
+            { label: 'Office/Retail Vacancy', value: offVac + ' / ' + offTotal, sub: fmtPct(offRate) + ' vacant' },
+            { label: 'Storage Vacancy', value: stoVac + ' / ' + stoTotal, sub: fmtPct(stoRate) + ' vacant' },
+            { label: 'Parking Vacancy', value: prkVac + ' / ' + prkTotal, sub: fmtPct(prkRate) + ' vacant' },
             { label: 'Known Vacant SF', value: fmtNum(vacantSF), sub: fmtPct(vacancyRate) + ' of portfolio SF' },
-            { label: 'Total Lease Revenue', value: fmt$(totalRevenue), sub: '2026 projected' },
             { label: 'Total CapEx + TI + Brokerage', value: fmt$(totalCapex + totalBrokerage), sub: fmt$(totalCapex) + ' CapEx/TI + ' + fmt$(totalBrokerage) + ' brokerage' }
         ];
 
@@ -485,15 +553,10 @@ class Dashboard {
         const buildings = this.getFilteredBuildings();
         const labels = buildings.map(b => b.name);
 
-        // Unit-count based vacancy rate (vacant units / total units)
-        const unitVacRate = buildings.map(b => b.totalUnitCount > 0 ? (b.vacantUnits.length / b.totalUnitCount * 100) : 0);
-        // SF-based vacancy rate (only where RSF is known)
-        const sfVacRate = buildings.map(b => {
-            const vacSF = b.vacantUnits.filter(v=>v.rsf).reduce((a,v)=>a+v.rsf,0);
-            return b.totalSF > 0 ? (vacSF / b.totalSF * 100) : 0;
-        });
-        // General vacancy allowance from budget
-        const genVac = buildings.map(b => b.generalVacancyRate !== null ? b.generalVacancyRate * 100 : 0);
+        // Vacancy rates by unit type
+        const officeRate = buildings.map(b => b.office.total > 0 ? (b.office.vacant / b.office.total * 100) : 0);
+        const storageRate = buildings.map(b => b.storage.total > 0 ? (b.storage.vacant / b.storage.total * 100) : 0);
+        const parkingRate = buildings.map(b => b.parking.total > 0 ? (b.parking.vacant / b.parking.total * 100) : 0);
 
         const ctx = document.getElementById('vacancy-rate-chart').getContext('2d');
         this.charts.vacRate = new Chart(ctx, {
@@ -501,21 +564,28 @@ class Dashboard {
             data: {
                 labels,
                 datasets: [
-                    { label: 'Vacant Units %', data: unitVacRate, backgroundColor: '#C44E52CC', borderColor: '#C44E52', borderWidth: 1, borderRadius: 4 },
-                    { label: 'Vacant SF %', data: sfVacRate, backgroundColor: '#DD8452CC', borderColor: '#DD8452', borderWidth: 1, borderRadius: 4 },
-                    { label: 'General Vacancy Allowance', data: genVac, backgroundColor: '#8172B3CC', borderColor: '#8172B3', borderWidth: 1, borderRadius: 4 }
+                    { label: 'Office/Retail', data: officeRate, backgroundColor: '#C44E52CC', borderColor: '#C44E52', borderWidth: 1, borderRadius: 4 },
+                    { label: 'Storage', data: storageRate, backgroundColor: '#DD8452CC', borderColor: '#DD8452', borderWidth: 1, borderRadius: 4 },
+                    { label: 'Parking', data: parkingRate, backgroundColor: '#8172B3CC', borderColor: '#8172B3', borderWidth: 1, borderRadius: 4 }
                 ]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 plugins: {
                     legend: { position: 'top', labels: { usePointStyle: true, padding: 12 } },
-                    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%' } },
+                    tooltip: { callbacks: {
+                        label: function(ctx) {
+                            const b = buildings[ctx.dataIndex];
+                            const types = [b.office, b.storage, b.parking];
+                            const t = types[ctx.datasetIndex];
+                            return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '% (' + t.vacant + ' of ' + t.total + ')';
+                        }
+                    }},
                     datalabels: false
                 },
                 scales: {
                     x: { grid: { display: false } },
-                    y: { beginAtZero: true, ticks: { callback: v => v + '%' }, title: { display: true, text: 'Vacancy Rate' } }
+                    y: { beginAtZero: true, ticks: { callback: v => v + '%' }, title: { display: true, text: 'Vacancy Rate by Unit Type' } }
                 }
             }
         });
@@ -608,26 +678,30 @@ class Dashboard {
 
     renderSummaryTable() {
         const buildings = this.getFilteredBuildings();
+        const badge = (vacant, total) => {
+            if (total === 0) return '—';
+            const rate = vacant / total;
+            const cls = rate > 0.25 ? 'vacancy-high' : rate > 0.1 ? 'vacancy-med' : 'vacancy-low';
+            return `<span class="vacancy-badge ${cls}">${vacant}/${total} (${(rate*100).toFixed(0)}%)</span>`;
+        };
+
         let html = '<table class="data-table"><thead><tr>';
-        ['Building','Total SF','Total Units','Vacant Units','Vacant Units %','Known Vacant SF','Vacant SF %','Gen. Vacancy %','Lease Revenue','CapEx + TI','Brokerage','Notes'].forEach(h => {
+        ['Building','Total SF','Office/Retail','Storage','Parking','Known Vacant SF','Vacant SF %','Lease Revenue','CapEx + TI','Brokerage','Notes'].forEach(h => {
             html += `<th>${h}</th>`;
         });
         html += '</tr></thead><tbody>';
         buildings.forEach(b => {
             const vacSF = b.vacantUnits.filter(v=>v.rsf).reduce((a,v)=>a+v.rsf,0);
             const sfRate = b.totalSF > 0 ? vacSF / b.totalSF : 0;
-            const unitRate = b.totalUnitCount > 0 ? b.vacantUnits.length / b.totalUnitCount : 0;
-            const unitBadgeClass = unitRate > 0.25 ? 'vacancy-high' : unitRate > 0.1 ? 'vacancy-med' : 'vacancy-low';
             const sfBadgeClass = sfRate > 0.1 ? 'vacancy-high' : sfRate > 0.03 ? 'vacancy-med' : 'vacancy-low';
             html += `<tr>
                 <td><strong>${b.name}</strong></td>
                 <td class="num">${fmtNum(b.totalSF)}</td>
-                <td class="num">${b.totalUnitCount}</td>
-                <td class="num">${b.vacantUnits.length}</td>
-                <td class="num"><span class="vacancy-badge ${unitBadgeClass}">${fmtPct(unitRate)}</span></td>
-                <td class="num">${fmtNum(vacSF)}</td>
+                <td class="num">${badge(b.office.vacant, b.office.total)}</td>
+                <td class="num">${badge(b.storage.vacant, b.storage.total)}</td>
+                <td class="num">${badge(b.parking.vacant, b.parking.total)}</td>
+                <td class="num">${vacSF > 0 ? fmtNum(vacSF) : '—'}</td>
                 <td class="num"><span class="vacancy-badge ${sfBadgeClass}">${sfRate > 0 ? fmtPct(sfRate) : '—'}</span></td>
-                <td class="num">${b.generalVacancyRate !== null ? fmtPct(b.generalVacancyRate) : 'N/A'}</td>
                 <td class="num">${fmt$(b.totalLeaseRevenue)}</td>
                 <td class="num">${fmt$(b.capitalExpenses + b.tenantImprovement)}</td>
                 <td class="num">${fmt$(b.brokerageFees)}</td>
@@ -637,22 +711,23 @@ class Dashboard {
 
         // Totals row
         const totals = buildings.reduce((t,b) => {
-            const v = b.vacantUnits.filter(u=>u.rsf).reduce((a,u)=>a+u.rsf,0);
-            t.sf += b.totalSF; t.vacSF += v; t.vacUnits += b.vacantUnits.length; t.totalUnits += b.totalUnitCount;
+            t.sf += b.totalSF;
+            t.vacSF += b.vacantUnits.filter(u=>u.rsf).reduce((a,u)=>a+u.rsf,0);
+            t.offT += b.office.total; t.offV += b.office.vacant;
+            t.stoT += b.storage.total; t.stoV += b.storage.vacant;
+            t.prkT += b.parking.total; t.prkV += b.parking.vacant;
             t.rev += b.totalLeaseRevenue; t.capex += b.capitalExpenses + b.tenantImprovement; t.broker += b.brokerageFees;
             return t;
-        }, {sf:0,vacSF:0,vacUnits:0,totalUnits:0,rev:0,capex:0,broker:0});
+        }, {sf:0,vacSF:0,offT:0,offV:0,stoT:0,stoV:0,prkT:0,prkV:0,rev:0,capex:0,broker:0});
         const totalSFRate = totals.sf > 0 ? totals.vacSF / totals.sf : 0;
-        const totalUnitRate = totals.totalUnits > 0 ? totals.vacUnits / totals.totalUnits : 0;
         html += `<tr style="font-weight:700;border-top:2px solid #333">
             <td>Portfolio Total</td>
             <td class="num">${fmtNum(totals.sf)}</td>
-            <td class="num">${totals.totalUnits}</td>
-            <td class="num">${totals.vacUnits}</td>
-            <td class="num">${fmtPct(totalUnitRate)}</td>
-            <td class="num">${fmtNum(totals.vacSF)}</td>
+            <td class="num">${badge(totals.offV, totals.offT)}</td>
+            <td class="num">${badge(totals.stoV, totals.stoT)}</td>
+            <td class="num">${badge(totals.prkV, totals.prkT)}</td>
+            <td class="num">${totals.vacSF > 0 ? fmtNum(totals.vacSF) : '—'}</td>
             <td class="num">${totalSFRate > 0 ? fmtPct(totalSFRate) : '—'}</td>
-            <td></td>
             <td class="num">${fmt$(totals.rev)}</td>
             <td class="num">${fmt$(totals.capex)}</td>
             <td class="num">${fmt$(totals.broker)}</td>
