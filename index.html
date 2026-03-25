@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 Portfolio Vacancy Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+    <style>
+        :root {
+            --bg-primary: #f0f2f5;
+            --bg-card: #ffffff;
+            --bg-header: #1a2744;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --text-on-dark: #ffffff;
+            --positive: #28a745;
+            --negative: #dc3545;
+            --warning: #ffc107;
+            --accent: #4C72B0;
+            --gap: 16px;
+            --radius: 10px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+        .dashboard-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: var(--gap);
+        }
+        .dashboard-header {
+            background: var(--bg-header);
+            color: var(--text-on-dark);
+            padding: 24px 28px;
+            border-radius: var(--radius);
+            margin-bottom: var(--gap);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .dashboard-header h1 { font-size: 22px; font-weight: 600; }
+        .dashboard-header .subtitle { font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+        .filters { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .filter-group { display: flex; align-items: center; gap: 6px; }
+        .filter-group label { font-size: 12px; color: rgba(255,255,255,0.7); }
+        .filter-group select {
+            padding: 6px 10px; border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 4px; background: rgba(255,255,255,0.1);
+            color: var(--text-on-dark); font-size: 13px;
+        }
+        .filter-group select option { background: var(--bg-header); color: var(--text-on-dark); }
+
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: var(--gap);
+            margin-bottom: var(--gap);
+        }
+        .kpi-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 18px 22px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .kpi-label {
+            font-size: 11px; color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+        }
+        .kpi-value { font-size: 26px; font-weight: 700; color: var(--text-primary); }
+        .kpi-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+        .chart-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: var(--gap);
+            margin-bottom: var(--gap);
+        }
+        .chart-container {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .chart-container h3 {
+            font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px;
+        }
+        .chart-container canvas { max-height: 320px; }
+        .chart-full { grid-column: 1 / -1; }
+
+        .table-section {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            overflow-x: auto;
+            margin-bottom: var(--gap);
+        }
+        .table-section h3 {
+            font-size: 14px; font-weight: 600; margin-bottom: 14px;
+        }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table thead th {
+            text-align: left; padding: 10px 12px; border-bottom: 2px solid #dee2e6;
+            color: var(--text-secondary); font-weight: 600; font-size: 11px;
+            text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;
+            cursor: pointer; user-select: none;
+        }
+        .data-table thead th:hover { color: var(--text-primary); background: #f8f9fa; }
+        .data-table tbody td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }
+        .data-table tbody tr:hover { background: #f8f9fa; }
+        .data-table tbody tr:last-child td { border-bottom: none; }
+        .data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+        .vacancy-badge {
+            display: inline-block; padding: 2px 8px; border-radius: 12px;
+            font-size: 11px; font-weight: 600;
+        }
+        .vacancy-low { background: #d4edda; color: #155724; }
+        .vacancy-med { background: #fff3cd; color: #856404; }
+        .vacancy-high { background: #f8d7da; color: #721c24; }
+
+        .footer {
+            text-align: center; padding: 16px; font-size: 12px; color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-header { flex-direction: column; align-items: flex-start; }
+            .kpi-row { grid-template-columns: repeat(2, 1fr); }
+            .chart-row { grid-template-columns: 1fr; }
+        }
+        @media print {
+            body { background: white; }
+            .filters { display: none; }
+            .chart-container { break-inside: avoid; }
+            .kpi-card { border: 1px solid #dee2e6; box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <header class="dashboard-header">
+        <div>
+            <h1>2026 Portfolio Vacancy Dashboard</h1>
+            <div class="subtitle">Source: 2026 Global Workbook &mdash; Data as of March 2026</div>
+        </div>
+        <div class="filters">
+            <div class="filter-group">
+                <label for="filter-building">Building</label>
+                <select id="filter-building" onchange="dashboard.applyFilters()">
+                    <option value="all">All Buildings</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <section class="kpi-row" id="kpi-row"></section>
+
+    <section class="chart-row">
+        <div class="chart-container">
+            <h3>Vacancy Rate by Building (Unit % &bull; SF % &bull; Budget Allowance)</h3>
+            <canvas id="vacancy-rate-chart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h3>Occupied vs. Vacant SF</h3>
+            <canvas id="occupied-vacant-chart"></canvas>
+        </div>
+    </section>
+
+    <section class="chart-row">
+        <div class="chart-container">
+            <h3>CapEx &amp; Brokerage/Commissions by Building</h3>
+            <canvas id="capex-chart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h3>Total Lease Revenue by Building</h3>
+            <canvas id="revenue-chart"></canvas>
+        </div>
+    </section>
+
+    <section class="table-section">
+        <h3>Building Summary</h3>
+        <div id="summary-table"></div>
+    </section>
+
+    <section class="table-section">
+        <h3>Vacant Unit Detail</h3>
+        <div id="vacant-table"></div>
+    </section>
+
+    <section class="table-section">
+        <h3>CapEx &amp; Commission Detail (from Brokerage_TI Tab)</h3>
+        <div id="capex-table"></div>
+    </section>
+
+    <footer class="footer">2026 Global Workbook &mdash; Vacancy, CapEx &amp; Commission Dashboard</footer>
+</div>
+
+<script>
+const COLORS = ['#4C72B0','#DD8452','#55A868','#C44E52','#8172B3','#937860','#DA8BC3','#8C8C8C'];
+
+const BUILDINGS = [
+    {
+        name: "811 Stark",
+        totalSF: 26685,
+        year: 2026,
+        generalVacancyRate: 0.05,
+        totalLeaseRevenue: 761663,
+        vacantUnits: [
+            { unit: "P1", desc: "Vacant", rsf: null, type: "parking" },
+            { unit: "P2", desc: "Vacant", rsf: null, type: "parking" },
+            { unit: "P9", desc: "Vacant", rsf: null, type: "parking" },
+            { unit: "P10", desc: "Vacant", rsf: null, type: "parking" }
+        ],
+        occupiedUnitCount: 11,
+        totalUnitCount: 15,
+        brokerageFees: 0,
+        capitalExpenses: 13000,
+        tenantImprovement: 0,
+        notes: "Facade remediation budgeted at $13,000 in June"
+    },
+    {
+        name: "Broadway Commerce Center",
+        totalSF: 49410,
+        year: 2026,
+        generalVacancyRate: 0.05,
+        totalLeaseRevenue: 1070004,
+        vacantUnits: [
+            { unit: "205", desc: "Vacant - 571 RSF", rsf: 571, type: "office" },
+            { unit: "206", desc: "Vacant - 1,339 RSF", rsf: 1339, type: "office" },
+            { unit: "225", desc: "Vacant - 571 RSF", rsf: 571, type: "office" },
+            { unit: "226", desc: "Vacant - 1,397 RSF", rsf: 1397, type: "office" },
+            { unit: "A", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "B", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "E", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "F", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "G", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "I", desc: "Vacant (Storage)", rsf: null, type: "storage" }
+        ],
+        occupiedUnitCount: 19,
+        totalUnitCount: 29,
+        brokerageFees: 35689,
+        capitalExpenses: 127947,
+        tenantImprovement: 0,
+        notes: "4 office suites (3,878 RSF) budgeted to lease up Apr 2026; compressor $25K Jul; brokerage $35.7K May"
+    },
+    {
+        name: "District Office (PMC)",
+        totalSF: 83805,
+        year: 2026,
+        generalVacancyRate: null,
+        totalLeaseRevenue: 2313063,
+        vacantUnits: [
+            { unit: "Retail 1-3", desc: "Vacant (Retail)", rsf: null, type: "retail" },
+            { unit: "400", desc: "Vacant (Office)", rsf: null, type: "office" },
+            { unit: "510", desc: "Vacant (Office)", rsf: null, type: "office" },
+            { unit: "P17", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P19", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P20", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P21", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P26", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P27", desc: "Vacant (Parking)", rsf: null, type: "parking" }
+        ],
+        occupiedUnitCount: 26,
+        totalUnitCount: 35,
+        brokerageFees: 0,
+        capitalExpenses: 30000,
+        tenantImprovement: 0,
+        notes: "Parking enclosure capital project $30K budgeted Apr 2026"
+    },
+    {
+        name: "Eastbank",
+        totalSF: 59038,
+        year: 2026,
+        generalVacancyRate: 0.05,
+        totalLeaseRevenue: 1402879,
+        vacantUnits: [
+            { unit: "135", desc: "Vacant (Office)", rsf: null, type: "office" },
+            { unit: "223", desc: "Vacant (Office)", rsf: null, type: "office" },
+            { unit: "235", desc: "Vacant (Office)", rsf: null, type: "office" },
+            { unit: "305", desc: "Vacant (Office)", rsf: null, type: "office" },
+            { unit: "310", desc: "Vacant (Office)", rsf: null, type: "office" },
+            { unit: "350", desc: "Vacant (Office)", rsf: null, type: "office" },
+            { unit: "435", desc: "Vacant (Office)", rsf: null, type: "office" },
+            { unit: "490-J", desc: "Vacant (Office)", rsf: null, type: "office" },
+            { unit: "S106", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S107", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S109", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S116", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S202", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S207", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S310", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S311", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S312", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S317", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S323", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S324", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S402", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S406", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S407", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S426", desc: "Vacant - leaky unit (Storage)", rsf: null, type: "storage" },
+            { unit: "S427", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S429", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S436", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S438", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S501", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S512", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S513", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S601", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "S608-S628", desc: "Vacant (Storage) - 17 units", rsf: null, type: "storage" },
+            { unit: "P01", desc: "Vacant (Parking)", rsf: null, type: "parking" },
+            { unit: "P14-P15", desc: "Vacant (Parking) - 2 spaces", rsf: null, type: "parking" },
+            { unit: "P26-P35", desc: "Vacant - Taylor lot no longer leased (10 spaces)", rsf: null, type: "parking" },
+            { unit: "P39-P89", desc: "Vacant (Parking) - various spaces", rsf: null, type: "parking" }
+        ],
+        occupiedUnitCount: 95,
+        totalUnitCount: 176,
+        brokerageFees: 31405,
+        capitalExpenses: 30555,
+        tenantImprovement: 0,
+        notes: "Highest vacancy count; many storage & parking units; Taylor lot spaces (P26-P35) no longer leased"
+    },
+    {
+        name: "Eastside Exchange",
+        totalSF: 82416,
+        year: 2026,
+        generalVacancyRate: 0.05,
+        totalLeaseRevenue: 1325156,
+        vacantUnits: [
+            { unit: "12", desc: "Vacant - former Cascade Energy - 1,881 RSF", rsf: 1881, type: "office" },
+            { unit: "307", desc: "Vacant - former Cascade Energy - 2,129 RSF", rsf: 2129, type: "office" },
+            { unit: "F", desc: "Vacant (Storage)", rsf: null, type: "storage" },
+            { unit: "H", desc: "Vacant (Storage)", rsf: null, type: "storage" }
+        ],
+        occupiedUnitCount: 16,
+        totalUnitCount: 20,
+        brokerageFees: 200560,
+        capitalExpenses: 0,
+        tenantImprovement: 204515,
+        notes: "Suite 400 (13,500 RSF) lease-up Aug with $182.8K brokerage + $135K TI; Suite 307 budgeted Mar; Suite 12 budgeted Apr"
+    },
+    {
+        name: "Water Avenue",
+        totalSF: 46337,
+        year: 2026,
+        generalVacancyRate: 0.05,
+        totalLeaseRevenue: 847697,
+        vacantUnits: [
+            { unit: "50B", desc: "Vacant - 402 RSF", rsf: 402, type: "office" },
+            { unit: "S060", desc: "Vacant - 914 RSF", rsf: 914, type: "storage" }
+        ],
+        occupiedUnitCount: 27,
+        totalUnitCount: 29,
+        brokerageFees: 12011,
+        capitalExpenses: 17612,
+        tenantImprovement: 0,
+        notes: "Lowest vacancy; Door relay access controls $5K (WACC); Suite 270 brokerage $12K May"
+    }
+];
+
+// CapEx / Commission line items from Brokerage_TI tab
+const CAPEX_DETAILS = [
+    { building: "811 Stark", suite: "Facade", desc: "Facade remediation - prep/paint 1st floor exterior", reletMonth: "Jun 2026", brokerageFee: 0, tiAllowance: 13000, type: "CapEx" },
+    { building: "Broadway Commerce Center", suite: "205", desc: "571 RSF @ $22.50/SF, 24-mo term, $5/RSF TI", reletMonth: "May 2026", brokerageFee: 1304, tiAllowance: 2855, type: "Lease-Up" },
+    { building: "Broadway Commerce Center", suite: "206", desc: "1,339 RSF @ $21.00/SF, 36-mo term, $5/RSF TI", reletMonth: "May 2026", brokerageFee: 6518, tiAllowance: 6695, type: "Lease-Up" },
+    { building: "Broadway Commerce Center", suite: "225", desc: "571 RSF @ $22.00/SF, 24-mo term, $5/RSF TI", reletMonth: "May 2026", brokerageFee: 1275, tiAllowance: 2855, type: "Lease-Up" },
+    { building: "Broadway Commerce Center", suite: "226", desc: "1,397 RSF @ $22.00/SF, 24-mo term, $6/RSF TI", reletMonth: "May 2026", brokerageFee: 3120, tiAllowance: 8382, type: "Lease-Up" },
+    { building: "Broadway Commerce Center", suite: "430", desc: "2,054 RSF @ $20.45/SF, 120-mo term, $40/RSF TI", reletMonth: "May 2026", brokerageFee: 23472, tiAllowance: 82160, type: "Lease-Up" },
+    { building: "Broadway Commerce Center", suite: "Compressor", desc: "HVAC compressor replacement", reletMonth: "Jul 2026", brokerageFee: 0, tiAllowance: 25000, type: "CapEx" },
+    { building: "District Office (PMC)", suite: "Parking", desc: "Parking enclosure project", reletMonth: "Apr 2026", brokerageFee: 0, tiAllowance: 30000, type: "CapEx" },
+    { building: "Eastbank", suite: "330", desc: "1,652 RSF @ $27.00/SF, 36-mo term, $5/RSF TI (if no renewal)", reletMonth: "Apr 2026", brokerageFee: 6893, tiAllowance: 8260, type: "Lease-Up" },
+    { building: "Eastbank", suite: "200", desc: "1,235 RSF @ $23.00/SF, 62-mo term, $7/RSF TI", reletMonth: "Mar 2026", brokerageFee: 7811, tiAllowance: 15565, type: "Lease-Up" },
+    { building: "Eastbank", suite: "450", desc: "1,346 RSF @ $26.00/SF, 62-mo term, $5/RSF TI (if no renewal)", reletMonth: "Aug 2026", brokerageFee: 9624, tiAllowance: 6730, type: "Lease-Up" },
+    { building: "Eastside Exchange", suite: "307", desc: "2,129 RSF @ $24.50/SF, 72-mo term, $15/RSF TI", reletMonth: "Mar 2026", brokerageFee: 7339, tiAllowance: 31935, type: "Lease-Up" },
+    { building: "Eastside Exchange", suite: "12", desc: "1,879 RSF @ $24.00/SF, 36-mo term, $20/RSF TI", reletMonth: "Apr 2026", brokerageFee: 10454, tiAllowance: 37580, type: "Lease-Up" },
+    { building: "Eastside Exchange", suite: "400", desc: "13,500 RSF @ $34.00/SF, 60-mo term, $10/RSF TI", reletMonth: "Aug 2026", brokerageFee: 182767, tiAllowance: 135000, type: "Lease-Up" },
+    { building: "Water Avenue", suite: "Access Controls", desc: "Door relay access controls", reletMonth: "Mar 2026", brokerageFee: 0, tiAllowance: 5000, type: "CapEx" },
+    { building: "Water Avenue", suite: "235", desc: "862 RSF @ $23.00/SF, 12-mo term, $3.50/RSF TI", reletMonth: "Mar 2026", brokerageFee: 0, tiAllowance: 3017, type: "Lease-Up" },
+    { building: "Water Avenue", suite: "270", desc: "1,919 RSF @ $27.00/SF, 36-mo term, $5/RSF TI", reletMonth: "May 2026", brokerageFee: 12011, tiAllowance: 9595, type: "Lease-Up" }
+];
+
+function fmt$(v) {
+    if (v >= 1e6) return '$' + (v/1e6).toFixed(1) + 'M';
+    if (v >= 1e3) return '$' + (v/1e3).toFixed(0) + 'K';
+    return '$' + v.toLocaleString();
+}
+function fmtPct(v) { return v !== null ? (v * 100).toFixed(1) + '%' : 'N/A'; }
+function fmtNum(v) { return v.toLocaleString(); }
+
+class Dashboard {
+    constructor() {
+        this.charts = {};
+        this.selectedBuilding = 'all';
+        this.init();
+    }
+
+    init() {
+        this.populateFilter();
+        this.renderKPIs();
+        this.renderCharts();
+        this.renderSummaryTable();
+        this.renderVacantTable();
+        this.renderCapexTable();
+    }
+
+    getFilteredBuildings() {
+        if (this.selectedBuilding === 'all') return BUILDINGS;
+        return BUILDINGS.filter(b => b.name === this.selectedBuilding);
+    }
+
+    getFilteredCapex() {
+        if (this.selectedBuilding === 'all') return CAPEX_DETAILS;
+        return CAPEX_DETAILS.filter(c => c.building === this.selectedBuilding);
+    }
+
+    populateFilter() {
+        const sel = document.getElementById('filter-building');
+        BUILDINGS.forEach(b => {
+            const opt = document.createElement('option');
+            opt.value = b.name;
+            opt.textContent = b.name;
+            sel.appendChild(opt);
+        });
+    }
+
+    applyFilters() {
+        this.selectedBuilding = document.getElementById('filter-building').value;
+        this.renderKPIs();
+        this.updateCharts();
+        this.renderSummaryTable();
+        this.renderVacantTable();
+        this.renderCapexTable();
+    }
+
+    renderKPIs() {
+        const buildings = this.getFilteredBuildings();
+        const totalSF = buildings.reduce((s,b) => s + b.totalSF, 0);
+        const vacantSF = buildings.reduce((s,b) => s + b.vacantUnits.filter(v => v.rsf).reduce((a,v) => a + v.rsf, 0), 0);
+        const totalVacantUnits = buildings.reduce((s,b) => s + b.vacantUnits.length, 0);
+        const totalRevenue = buildings.reduce((s,b) => s + b.totalLeaseRevenue, 0);
+        const totalCapex = buildings.reduce((s,b) => s + b.capitalExpenses + b.tenantImprovement, 0);
+        const totalBrokerage = buildings.reduce((s,b) => s + b.brokerageFees, 0);
+        const vacancyRate = totalSF > 0 ? vacantSF / totalSF : 0;
+
+        const totalUnits = buildings.reduce((s,b) => s + b.totalUnitCount, 0);
+        const unitVacRate = totalUnits > 0 ? totalVacantUnits / totalUnits : 0;
+
+        const kpis = [
+            { label: 'Total Portfolio SF', value: fmtNum(totalSF), sub: buildings.length + ' buildings' },
+            { label: 'Vacant Units', value: totalVacantUnits, sub: totalUnits + ' total units' },
+            { label: 'Vacant Unit Rate', value: fmtPct(unitVacRate), sub: 'Vacant / total units' },
+            { label: 'Known Vacant SF', value: fmtNum(vacantSF), sub: fmtPct(vacancyRate) + ' of portfolio SF' },
+            { label: 'Total Lease Revenue', value: fmt$(totalRevenue), sub: '2026 projected' },
+            { label: 'Total CapEx + TI + Brokerage', value: fmt$(totalCapex + totalBrokerage), sub: fmt$(totalCapex) + ' CapEx/TI + ' + fmt$(totalBrokerage) + ' brokerage' }
+        ];
+
+        const row = document.getElementById('kpi-row');
+        row.innerHTML = kpis.map(k => `
+            <div class="kpi-card">
+                <div class="kpi-label">${k.label}</div>
+                <div class="kpi-value">${k.value}</div>
+                <div class="kpi-sub">${k.sub}</div>
+            </div>`).join('');
+    }
+
+    renderCharts() {
+        this.createVacancyRateChart();
+        this.createOccupiedVacantChart();
+        this.createCapexChart();
+        this.createRevenueChart();
+    }
+
+    updateCharts() {
+        Object.values(this.charts).forEach(c => c.destroy());
+        this.charts = {};
+        this.renderCharts();
+    }
+
+    createVacancyRateChart() {
+        const buildings = this.getFilteredBuildings();
+        const labels = buildings.map(b => b.name);
+
+        // Unit-count based vacancy rate (vacant units / total units)
+        const unitVacRate = buildings.map(b => b.totalUnitCount > 0 ? (b.vacantUnits.length / b.totalUnitCount * 100) : 0);
+        // SF-based vacancy rate (only where RSF is known)
+        const sfVacRate = buildings.map(b => {
+            const vacSF = b.vacantUnits.filter(v=>v.rsf).reduce((a,v)=>a+v.rsf,0);
+            return b.totalSF > 0 ? (vacSF / b.totalSF * 100) : 0;
+        });
+        // General vacancy allowance from budget
+        const genVac = buildings.map(b => b.generalVacancyRate !== null ? b.generalVacancyRate * 100 : 0);
+
+        const ctx = document.getElementById('vacancy-rate-chart').getContext('2d');
+        this.charts.vacRate = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    { label: 'Vacant Units %', data: unitVacRate, backgroundColor: '#C44E52CC', borderColor: '#C44E52', borderWidth: 1, borderRadius: 4 },
+                    { label: 'Vacant SF %', data: sfVacRate, backgroundColor: '#DD8452CC', borderColor: '#DD8452', borderWidth: 1, borderRadius: 4 },
+                    { label: 'General Vacancy Allowance', data: genVac, backgroundColor: '#8172B3CC', borderColor: '#8172B3', borderWidth: 1, borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { usePointStyle: true, padding: 12 } },
+                    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%' } },
+                    datalabels: false
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { callback: v => v + '%' }, title: { display: true, text: 'Vacancy Rate' } }
+                }
+            }
+        });
+    }
+
+    createOccupiedVacantChart() {
+        const buildings = this.getFilteredBuildings();
+        const labels = buildings.map(b => b.name);
+        const vacSF = buildings.map(b => b.vacantUnits.filter(v=>v.rsf).reduce((a,v)=>a+v.rsf,0));
+        const occSF = buildings.map((b,i) => b.totalSF - vacSF[i]);
+
+        const ctx = document.getElementById('occupied-vacant-chart').getContext('2d');
+        this.charts.occVac = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    { label: 'Occupied SF', data: occSF, backgroundColor: '#55A868CC', borderColor: '#55A868', borderWidth: 1, borderRadius: 4 },
+                    { label: 'Vacant SF (Known)', data: vacSF, backgroundColor: '#C44E52CC', borderColor: '#C44E52', borderWidth: 1, borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 12 } },
+                    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString() + ' SF' } }
+                },
+                scales: {
+                    x: { stacked: true, grid: { display: false } },
+                    y: { stacked: true, beginAtZero: true, ticks: { callback: v => (v/1000).toFixed(0) + 'K' }, title: { display: true, text: 'Square Feet' } }
+                }
+            }
+        });
+    }
+
+    createCapexChart() {
+        const buildings = this.getFilteredBuildings();
+        const labels = buildings.map(b => b.name);
+        const capex = buildings.map(b => b.capitalExpenses);
+        const ti = buildings.map(b => b.tenantImprovement);
+        const brokerage = buildings.map(b => b.brokerageFees);
+
+        const ctx = document.getElementById('capex-chart').getContext('2d');
+        this.charts.capex = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    { label: 'Capital Expenses', data: capex, backgroundColor: '#4C72B0CC', borderColor: '#4C72B0', borderWidth: 1, borderRadius: 4 },
+                    { label: 'Tenant Improvement', data: ti, backgroundColor: '#DD8452CC', borderColor: '#DD8452', borderWidth: 1, borderRadius: 4 },
+                    { label: 'Brokerage Fees', data: brokerage, backgroundColor: '#937860CC', borderColor: '#937860', borderWidth: 1, borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 12 } },
+                    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmt$(ctx.parsed.y) } }
+                },
+                scales: {
+                    x: { stacked: true, grid: { display: false } },
+                    y: { stacked: true, beginAtZero: true, ticks: { callback: v => fmt$(v) }, title: { display: true, text: '2026 Budget' } }
+                }
+            }
+        });
+    }
+
+    createRevenueChart() {
+        const buildings = this.getFilteredBuildings();
+        const labels = buildings.map(b => b.name);
+        const rev = buildings.map(b => b.totalLeaseRevenue);
+
+        const ctx = document.getElementById('revenue-chart').getContext('2d');
+        this.charts.revenue = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{ label: 'Total Lease Revenue', data: rev, backgroundColor: COLORS.map(c => c + 'CC'), borderColor: COLORS, borderWidth: 1, borderRadius: 4 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => fmt$(ctx.parsed.y) } }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { callback: v => fmt$(v) }, title: { display: true, text: '2026 Projected' } }
+                }
+            }
+        });
+    }
+
+    renderSummaryTable() {
+        const buildings = this.getFilteredBuildings();
+        let html = '<table class="data-table"><thead><tr>';
+        ['Building','Total SF','Total Units','Vacant Units','Vacant Units %','Known Vacant SF','Vacant SF %','Gen. Vacancy %','Lease Revenue','CapEx + TI','Brokerage','Notes'].forEach(h => {
+            html += `<th>${h}</th>`;
+        });
+        html += '</tr></thead><tbody>';
+        buildings.forEach(b => {
+            const vacSF = b.vacantUnits.filter(v=>v.rsf).reduce((a,v)=>a+v.rsf,0);
+            const sfRate = b.totalSF > 0 ? vacSF / b.totalSF : 0;
+            const unitRate = b.totalUnitCount > 0 ? b.vacantUnits.length / b.totalUnitCount : 0;
+            const unitBadgeClass = unitRate > 0.25 ? 'vacancy-high' : unitRate > 0.1 ? 'vacancy-med' : 'vacancy-low';
+            const sfBadgeClass = sfRate > 0.1 ? 'vacancy-high' : sfRate > 0.03 ? 'vacancy-med' : 'vacancy-low';
+            html += `<tr>
+                <td><strong>${b.name}</strong></td>
+                <td class="num">${fmtNum(b.totalSF)}</td>
+                <td class="num">${b.totalUnitCount}</td>
+                <td class="num">${b.vacantUnits.length}</td>
+                <td class="num"><span class="vacancy-badge ${unitBadgeClass}">${fmtPct(unitRate)}</span></td>
+                <td class="num">${fmtNum(vacSF)}</td>
+                <td class="num"><span class="vacancy-badge ${sfBadgeClass}">${sfRate > 0 ? fmtPct(sfRate) : '—'}</span></td>
+                <td class="num">${b.generalVacancyRate !== null ? fmtPct(b.generalVacancyRate) : 'N/A'}</td>
+                <td class="num">${fmt$(b.totalLeaseRevenue)}</td>
+                <td class="num">${fmt$(b.capitalExpenses + b.tenantImprovement)}</td>
+                <td class="num">${fmt$(b.brokerageFees)}</td>
+                <td style="font-size:11px;color:#666;max-width:220px">${b.notes}</td>
+            </tr>`;
+        });
+
+        // Totals row
+        const totals = buildings.reduce((t,b) => {
+            const v = b.vacantUnits.filter(u=>u.rsf).reduce((a,u)=>a+u.rsf,0);
+            t.sf += b.totalSF; t.vacSF += v; t.vacUnits += b.vacantUnits.length; t.totalUnits += b.totalUnitCount;
+            t.rev += b.totalLeaseRevenue; t.capex += b.capitalExpenses + b.tenantImprovement; t.broker += b.brokerageFees;
+            return t;
+        }, {sf:0,vacSF:0,vacUnits:0,totalUnits:0,rev:0,capex:0,broker:0});
+        const totalSFRate = totals.sf > 0 ? totals.vacSF / totals.sf : 0;
+        const totalUnitRate = totals.totalUnits > 0 ? totals.vacUnits / totals.totalUnits : 0;
+        html += `<tr style="font-weight:700;border-top:2px solid #333">
+            <td>Portfolio Total</td>
+            <td class="num">${fmtNum(totals.sf)}</td>
+            <td class="num">${totals.totalUnits}</td>
+            <td class="num">${totals.vacUnits}</td>
+            <td class="num">${fmtPct(totalUnitRate)}</td>
+            <td class="num">${fmtNum(totals.vacSF)}</td>
+            <td class="num">${totalSFRate > 0 ? fmtPct(totalSFRate) : '—'}</td>
+            <td></td>
+            <td class="num">${fmt$(totals.rev)}</td>
+            <td class="num">${fmt$(totals.capex)}</td>
+            <td class="num">${fmt$(totals.broker)}</td>
+            <td></td>
+        </tr>`;
+        html += '</tbody></table>';
+        document.getElementById('summary-table').innerHTML = html;
+    }
+
+    renderVacantTable() {
+        const buildings = this.getFilteredBuildings();
+        let html = '<table class="data-table"><thead><tr>';
+        ['Building','Unit','Description','RSF','Type'].forEach(h => html += `<th>${h}</th>`);
+        html += '</tr></thead><tbody>';
+        buildings.forEach(b => {
+            b.vacantUnits.forEach(v => {
+                html += `<tr>
+                    <td>${b.name}</td>
+                    <td>${v.unit}</td>
+                    <td>${v.desc}</td>
+                    <td class="num">${v.rsf ? fmtNum(v.rsf) : '—'}</td>
+                    <td>${v.type}</td>
+                </tr>`;
+            });
+        });
+        html += '</tbody></table>';
+        document.getElementById('vacant-table').innerHTML = html;
+    }
+
+    renderCapexTable() {
+        const items = this.getFilteredCapex();
+        let html = '<table class="data-table"><thead><tr>';
+        ['Building','Suite','Description','Relet Month','Type','Brokerage Fee','TI / CapEx Allowance','Total Cost'].forEach(h => html += `<th>${h}</th>`);
+        html += '</tr></thead><tbody>';
+
+        let totalBroker = 0, totalTI = 0;
+        items.forEach(c => {
+            totalBroker += c.brokerageFee;
+            totalTI += c.tiAllowance;
+            html += `<tr>
+                <td>${c.building}</td>
+                <td>${c.suite}</td>
+                <td style="max-width:260px;font-size:12px">${c.desc}</td>
+                <td>${c.reletMonth}</td>
+                <td>${c.type}</td>
+                <td class="num">${c.brokerageFee ? fmt$(c.brokerageFee) : '—'}</td>
+                <td class="num">${fmt$(c.tiAllowance)}</td>
+                <td class="num">${fmt$(c.brokerageFee + c.tiAllowance)}</td>
+            </tr>`;
+        });
+
+        html += `<tr style="font-weight:700;border-top:2px solid #333">
+            <td colspan="5">Total</td>
+            <td class="num">${fmt$(totalBroker)}</td>
+            <td class="num">${fmt$(totalTI)}</td>
+            <td class="num">${fmt$(totalBroker + totalTI)}</td>
+        </tr>`;
+        html += '</tbody></table>';
+        document.getElementById('capex-table').innerHTML = html;
+    }
+}
+
+const dashboard = new Dashboard();
+</script>
+</body>
+</html>
